@@ -132,12 +132,14 @@ matchmaking:
   challenge_timeout: 30       # Create a challenge after being idle for 'challenge_timeout' minutes.
 
   challenge_variant: "random" # If set to 'random', the bot will choose one variant from the variants enabled in 'challenge.variants'.
+  challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
   challenge_initial_time: 60  # Initial time in seconds of the challenge.
   challenge_increment: 3      # Increment in seconds of the challenge.
 # challenge_days: 2           # Days for correspondence challenge. If this option is enabled, a correspondence challenge will be created even if 'challenge_initial_time' is enabled.
   opponent_min_rating: 600    # Opponents rating should be above this value (600 is the minimum rating in lichess).
   opponent_max_rating: 4000   # Opponents rating should be below this value (4000 is the maximum rating in lichess).
-  challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
+# opponent_blocklist:         # A list of bots not to challenge.
+#   - "Elmichess"             # This bot only accepts challenges from humans.
 
 # You can also create multiple types of challenges to be chosen randomly.
 # Settings from the top level still apply, but can be overriden.
@@ -148,6 +150,8 @@ matchmaking:
 #     challenge_increment: 0
 #     opponent_min_rating: 600
 #     opponent_max_rating: 1800
+#     opponent_blocklist:     # These apply in addition to the top level blocklist.
+#       - "maia9"
 #   - challenge_name: "Chess960 unrated"
 #     challenge_variant: "chess960"
 #     challenge_mode: "casual"

@@ -20,8 +20,10 @@ class Matchmaking:
 
         self.cfgs = []
         for cfg in challenge_cfgs:
-            # Use defaults from top level, but override
-            self.cfgs.append({**matchmaking_cfg, **cfg})
+            # Use defaults from top level, but override (or extend).
+            merged_config = {**matchmaking_cfg, **cfg}
+            merged_config["opponent_blocklist"] = matchmaking_cfg.get("opponent_blocklist", []) + cfg.get("opponent_blocklist", [])
+            self.cfgs.append(merged_config)
 
         self.last_challenge_created = time.time()
         self.last_game_ended = time.time()
@@ -86,10 +88,14 @@ class Matchmaking:
         min_rating = cfg.get("opponent_min_rating") or 600
         max_rating = cfg.get("opponent_max_rating") or 4000
 
+        def is_suitable_opponent(bot):
+            return (bot["username"] != self.username and
+                bot["username"] not in cfg["opponent_blocklist"] and
+                not bot.get("disabled") and
+                min_rating <= bot["perfs"].get(game_type, {}).get("rating", 0) <= max_rating)
+
         online_bots = self.li.get_online_bots()
-        online_bots = list(filter(lambda bot: bot["username"] != self.username and not bot.get("disabled") and
-                                  min_rating <= ((bot["perfs"].get(game_type) or {}).get("rating") or 0) <= max_rating,
-                                  online_bots))
+        online_bots = list(filter(is_suitable_opponent, online_bots))
         bot_username = random.choice(online_bots)["username"] if online_bots else None
         return bot_username, base_time, increment, days, variant, mode
 
