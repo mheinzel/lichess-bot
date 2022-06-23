@@ -199,6 +199,13 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                     logger.info(f"--- Process Used. Total Queued: {queued_processes}. Total Used: {busy_processes}")
                     pool.apply_async(play_game, [li, game_id, control_queue, user_profile, config, challenge_queue, correspondence_queue, logging_queue, game_logging_configurer, logging_level])
 
+            elif event["type"] == "challengeDeclined":
+                challenge_id = event["challenge"]["id"]
+                reason = event["challenge"].get("declineReason")
+                logger.info(f"Challenge {challenge_id} was declined: {reason}")
+                if matchmaker.challenge_id == game_id:
+                    matchmaker.challenge_id = None
+
             is_correspondence_ping = event["type"] == "correspondence_ping"
             is_local_game_done = event["type"] == "local_game_done"
             if (is_correspondence_ping or (is_local_game_done and not wait_for_correspondence_ping)) and not challenge_queue:
