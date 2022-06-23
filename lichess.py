@@ -65,12 +65,11 @@ class Lichess:
                           giveup=is_final,
                           backoff_log_level=logging.DEBUG,
                           giveup_log_level=logging.DEBUG)
-    def api_post(self, path, data=None, headers=None, params=None, payload=None, raise_for_status=True):
+    def api_post(self, path, data=None, headers=None, params=None, payload=None):
         logging.getLogger("backoff").setLevel(self.logging_level)
         url = urljoin(self.baseUrl, path)
         response = self.session.post(url, data=data, headers=headers, params=params, json=payload, timeout=2)
-        if raise_for_status:
-            response.raise_for_status()
+        response.raise_for_status()
         return response.json()
 
     def get_game(self, game_id):
@@ -131,7 +130,7 @@ class Lichess:
         return list(map(lambda bot: json.loads(bot), online_bots))
 
     def challenge(self, username, params):
-        return self.api_post(ENDPOINTS["challenge"].format(username), payload=params, raise_for_status=False)
+        return self.api_post(ENDPOINTS["challenge"].format(username), payload=params)
 
     def cancel(self, challenge_id):
-        return self.api_post(ENDPOINTS["cancel"].format(challenge_id), raise_for_status=False)
+        return self.api_post(ENDPOINTS["cancel"].format(challenge_id))

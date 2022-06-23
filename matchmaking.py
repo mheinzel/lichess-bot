@@ -1,9 +1,9 @@
 import random
 import time
 import logging
+from requests.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
-
 
 class Matchmaking:
     def __init__(self, li, config, username):
@@ -15,7 +15,8 @@ class Matchmaking:
         challenge_cfgs = matchmaking_cfg.get("challenges") or [{}]
 
         self.allow_matchmaking = matchmaking_cfg.get("allow_matchmaking") or False
-        self.challenge_timeout = matchmaking_cfg.get("challenge_timeout") or 30
+        self.challenge_timeout = matchmaking_cfg.get("challenge_timeout") or 30  # in minutes
+        self.rate_limit_timeout = matchmaking_cfg.get("rate_limit_timeout") or 60  # in minutes
 
         self.cfgs = []
         for cfg in challenge_cfgs:
@@ -24,18 +25,26 @@ class Matchmaking:
 
         self.last_challenge_created = time.time()
         self.last_game_ended = time.time()
+        self.last_challenge_rate_limited = time.time() - self.rate_limit_timeout * 60
         self.challenge_expire_time = 25  # The challenge expires 20 seconds after creating it.
         self.challenge_id = None
 
-    def should_create_challenge(self):
-        time_has_passed = self.last_game_ended + (self.challenge_timeout * 60) < time.time()
-        challenge_expired = self.last_challenge_created + self.challenge_expire_time < time.time() and self.challenge_id
-        # Wait 20 seconds before creating a new challenge to avoid hitting the api rate limits.
-        twenty_seconds_passed = self.last_challenge_created + 20 < time.time()
-        if challenge_expired:
+    def cancel_expired_challenges(self):
+        if self.challenge_id and time.time() > self.last_challenge_created + self.challenge_expire_time:
             self.li.cancel(self.challenge_id)
             logger.debug(f"Challenge id {self.challenge_id} cancelled.")
-        return self.allow_matchmaking and (time_has_passed or challenge_expired) and twenty_seconds_passed
+            self.challenge_id = None
+
+    def should_create_challenge(self):
+        if not self.allow_matchmaking:
+            return False
+        if self.challenge_id:
+            return False  # There's already an active challenge.
+        if time.time() < self.last_game_ended + self.challenge_timeout * 60:
+            return False  # Wait after the last game finished.
+        if time.time() < self.last_challenge_rate_limited + self.rate_limit_timeout * 60:
+            return False  # We already hit the rate limit, wait even longer.
+        return True
 
     def create_challenge(self, username, base_time, increment, days, variant, mode):
         rated = mode == "rated"
@@ -89,7 +98,15 @@ class Matchmaking:
         bot_username, base_time, increment, days, variant, mode = self.choose_opponent(cfg)
         challenge_info = cfg.get("challenge_name") or variant
         logger.info(f"Will challenge {bot_username} for a game ({challenge_info}).")
-        challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else None
-        logger.info(f"Challenge id is {challenge_id}.")
-        self.last_challenge_created = time.time()
-        self.challenge_id = challenge_id
+        try:
+            challenge_id = self.create_challenge(bot_username, base_time, increment, days, variant, mode) if bot_username else None
+            logger.info(f"Challenge id is {challenge_id}.")
+            self.last_challenge_created = time.time()
+            self.challenge_id = challenge_id
+        except HTTPError as exception:
+            if exception.response.status_code == 429:
+                logger.info(f"Challenge rate limit reached, backing off for a while.")
+                self.last_challenge_rate_limited = time.time()
+            else:
+                # Something unexpected went wrong, escalate!
+                raise exception
