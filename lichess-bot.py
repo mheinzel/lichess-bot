@@ -209,6 +209,8 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 opponent = event["challenge"]["destUser"]["name"]
                 reason = event["challenge"]["declineReason"]
                 logger.info(f"{opponent} declined {chlng}: {reason}")
+                if matchmaker.challenge_id == challenge_id:
+                    matchmaker.challenge_id = None
             elif event["type"] == "gameStart":
                 game_id = event["game"]["id"]
                 if matchmaker.challenge_id == game_id:
@@ -265,11 +267,12 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                         logger.info(f"Skip missing {chlng}")
                     queued_processes -= 1
 
-            if (queued_processes + busy_processes < 1
-                    and not challenge_queue
-                    and matchmaker.should_create_challenge()):
-                logger.info("Challenging a random bot")
-                matchmaker.challenge()
+            if queued_processes + busy_processes < 1 and not challenge_queue:
+                # We're idle!
+                matchmaker.cancel_expired_challenges()
+                if matchmaker.should_create_challenge():
+                    logger.info("Challenging a random bot")
+                    matchmaker.challenge()
 
             if time.time() > last_check_online_time + 60 * 60:  # 1 hour.
                 if not li.is_online(user_profile["id"]):
