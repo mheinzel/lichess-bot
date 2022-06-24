@@ -92,6 +92,7 @@ class Matchmaking:
             return (bot["username"] != self.username and
                 bot["username"] not in cfg["opponent_blocklist"] and
                 not bot.get("disabled") and
+                not bot.get("tosViolation") and  # Terms of Service
                 min_rating <= bot["perfs"].get(game_type, {}).get("rating", 0) <= max_rating)
 
         online_bots = self.li.get_online_bots()
