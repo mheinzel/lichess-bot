@@ -203,7 +203,7 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
                 challenge_id = event["challenge"]["id"]
                 reason = event["challenge"].get("declineReason")
                 logger.info(f"Challenge {challenge_id} was declined: {reason}")
-                if matchmaker.challenge_id == game_id:
+                if matchmaker.challenge_id == challenge_id:
                     matchmaker.challenge_id = None
 
             is_correspondence_ping = event["type"] == "correspondence_ping"
