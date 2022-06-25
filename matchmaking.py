@@ -56,6 +56,7 @@ class Matchmaking:
         else:
             params["clock.limit"] = base_time
             params["clock.increment"] = increment
+        logger.debug(f"POST: challenge/{username} {params}")
         challenge_id = self.li.challenge(username, params).get("challenge", {}).get("id")
         return challenge_id
 
@@ -115,5 +116,5 @@ class Matchmaking:
                 logger.info(f"Challenge rate limit reached, backing off for a while.")
                 self.last_challenge_rate_limited = time.time()
             else:
-                # Something unexpected went wrong, escalate!
-                raise exception
+                # Something unexpected went wrong, log it and hope it goes away...
+                logger.debug(f"HTTPError, response: {exception.response}")
