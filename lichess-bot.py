@@ -201,8 +201,9 @@ def start(li, user_profile, config, logging_level, log_filename, one_game=False)
 
             elif event["type"] == "challengeDeclined":
                 challenge_id = event["challenge"]["id"]
+                opponent = event["challenge"].get("destUser", {}).get("name", "?")
                 reason = event["challenge"].get("declineReason")
-                logger.info(f"Challenge {challenge_id} was declined: {reason}")
+                logger.info(f"Challenge {challenge_id} was declined by {opponent}: {reason}")
                 if matchmaker.challenge_id == challenge_id:
                     matchmaker.challenge_id = None
 
