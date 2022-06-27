@@ -90,11 +90,14 @@ class Matchmaking:
         max_rating = cfg.get("opponent_max_rating") or 4000
 
         def is_suitable_opponent(bot):
+            perf = bot["perfs"].get(game_type)
             return (bot["username"] != self.username and
                 bot["username"] not in cfg["opponent_blocklist"] and
                 not bot.get("disabled") and
                 not bot.get("tosViolation") and  # Terms of Service
-                min_rating <= bot["perfs"].get(game_type, {}).get("rating", 0) <= max_rating)
+                perf and
+                perf.get("games", 0) > 0 and
+                min_rating <= perf.get("rating", 0) <= max_rating)
 
         online_bots = self.li.get_online_bots()
         online_bots = list(filter(is_suitable_opponent, online_bots))
