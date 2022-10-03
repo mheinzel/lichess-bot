@@ -161,5 +161,7 @@ matchmaking:
 # opponent_max_rating: 4000   # Opponents rating should be below this value (4000 is the maximum rating in lichess).
   opponent_rating_difference: 100 # The maximum difference in rating between the bot's rating and opponent's rating.
   opponent_allow_tos_violation: true # Set to 'false' to prevent challenging bots that violated Lichess Terms of Service.
+# opponent_blocklist:         # A list of bots not to challenge.
+#   - "Elmichess"             # This bot only accepts challenges from humans.
   challenge_mode: "random"    # Set it to the mode in which challenges are sent. Possible options are 'casual', 'rated' and 'random'.
   delay_after_decline: none  # If a bot declines a challenge, delay issuing another challenge to that bot. Possible options are 'none', 'coarse', and 'fine'.
