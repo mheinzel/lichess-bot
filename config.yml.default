@@ -173,3 +173,15 @@ matchmaking:
 # block_list:                 # The list of bots that will not be challenged
 #   - user1
 #   - user2
+
+# You can also create multiple types of challenges to be chosen randomly.
+# Settings from the top level still apply, but can be overriden.
+# Note that some settings do not make sense to be overriden, e.g. allow_matchmaking or challenge_timeout.
+# The optional challenge_name field is useful to see which one was chosen (in the logs).
+# challenges:
+#   - challenge_name: "1+0 easy"
+#     challenge_initial_time: 60
+#     challenge_increment: 0
+#   - challenge_name: "Chess960 unrated"
+#     challenge_variant: "chess960"
+#     challenge_mode: "casual"
