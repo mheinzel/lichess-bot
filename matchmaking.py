@@ -33,6 +33,13 @@ class Matchmaking:
             raise ValueError(f"{self.delay_type} is not a valid value for {delay_option} parameter."
                              f" Choices are: {', '.join(DelayType)}.")
 
+        challenge_cfgs = self.matchmaking_cfg.get("challenges") or [{}]
+        self.all_cfgs = []
+        for cfg in challenge_cfgs:
+            # Use defaults from top level, but allow overriding
+            merged_config = {**self.matchmaking_cfg, **cfg}
+            self.all_cfgs.append(merged_config)
+
     def should_create_challenge(self):
         matchmaking_enabled = self.matchmaking_cfg.get("allow_matchmaking")
         time_has_passed = self.last_game_ended_delay.is_expired()
@@ -111,7 +118,11 @@ class Matchmaking:
             bot_rating = self.perf().get(game_type, {}).get("rating", 0)
             min_rating = bot_rating - rating_diff
             max_rating = bot_rating + rating_diff
-        logger.info(f"Seeking {game_type} game with opponent rating in [{min_rating}, {max_rating}] ...")
+
+        challenge_name = self.matchmaking_cfg.get("challenge_name")
+        if not challenge_name:
+            challenge_name = game_type
+        logger.info(f"Seeking {challenge_name} game with opponent rating in [{min_rating}, {max_rating}] ...")
         allow_tos_violation = self.matchmaking_cfg.get("opponent_allow_tos_violation", True)
 
         def is_suitable_opponent(bot):
@@ -153,6 +164,10 @@ class Matchmaking:
         return value if value != "random" else random.choice(choices)
 
     def challenge(self):
+        # Pick a random config for each challenge we make.
+        # Writing this to the existing global variable is super hacky, but keeps the diff small.
+        self.matchmaking_cfg = random.choice(self.all_cfgs)
+
         self.update_user_profile()
         bot_username, base_time, increment, days, variant, mode = self.choose_opponent()
         logger.info(f"Will challenge {bot_username} for a {variant} game.")
